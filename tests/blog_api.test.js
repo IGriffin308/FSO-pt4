@@ -4,7 +4,6 @@ const mongoose = require('mongoose')
 const supertest = require('supertest')
 const Blog = require('../models/blog')
 const app = require('../app')
-const { Deserializer } = require('node:v8')
 
 const api = supertest(app)
 
@@ -98,7 +97,7 @@ describe('blogs can be added', () => {
     await api
       .post('/api/blogs')
       .send(newBlog)
-      .expect(200)
+      .expect(201)
       .expect('Content-Type', /application\/json/)
 
     const response = await api.get('/api/blogs')
@@ -116,7 +115,7 @@ describe('blogs can be added', () => {
     await api
       .post('/api/blogs')
       .send(newBlog)
-      .expect(200)
+      .expect(201)
       .expect('Content-Type', /application\/json/)
 
     const response = await api.get('/api/blogs')

@@ -2,41 +2,7 @@ const blogsRouter = require('express').Router()
 const Blog = require('../models/blog')
 const User = require('../models/user')
 const jwt = require('jsonwebtoken')
-
-const getTokenFrom = request => {
-  const authorization = request.get('authorization')
-  if (authorization && authorization.toLowerCase().startsWith('bearer ')) {
-    return authorization.substring(7)
-  }
-  return null
-}
-
-const testEnvHelper = async (request) => {
-  if (process.env.NODE_ENV === 'test') {
-    return {
-      username: 'test',
-      name: 'test',
-      id: 'abcdef12345678',
-      blogs: [
-        {
-          title: 'test',
-          author: 'test',
-          url: 'test',
-          likes: 0
-        }
-      ]
-    }
-  }
-  const token = getTokenFrom(request)
-  if (!token) {
-    return response.status(401).json({ error: 'token missing' })
-  }
-  const decodedToken = jwt.verify(token, process.env.SECRET)
-  if (!decodedToken.id) {
-    return response.status(401).json({ error: 'token invalid' })
-  }
-  return await User.findById(decodedToken.id)
-}
+const { getUserHelper } = require('../utils/middleware')
 
 blogsRouter.get('/', async (request, response) => {
   const blogs = await Blog.find({})
@@ -54,7 +20,7 @@ blogsRouter.get('/:id', async (request, response) => {
 
 blogsRouter.post('/', async (request, response) => {
   const body = request.body;
-  const user = await testEnvHelper(request)
+  const user = await getUserHelper(request)
 
   if (!body.title || !body.url) {
     return response.status(400).json({ error: 'title or url missing' })
@@ -86,7 +52,7 @@ blogsRouter.post('/', async (request, response) => {
 
 blogsRouter.put('/:id', async (request, response) => {
   const body = request.body
-  const user = await testEnvHelper(request)
+  const user = await getUserHelper(request)
 
   const blog = {
     title: body.title,
@@ -129,7 +95,7 @@ blogsRouter.delete('/:id', async (request, response) => {
     return response.status(404).json({ error: 'blog not found' })
   }
 
-  const user = await testEnvHelper(request)
+  const user = await getUserHelper(request)
 
   user.blogs = user.blogs.filter(b => b.id !== blog.id)
   // await User.save()

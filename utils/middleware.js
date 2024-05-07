@@ -30,8 +30,44 @@ const errorHandler = (error, request, response, next) => {
   next(error)
 }
 
+const getTokenFrom = (request) => {
+  const authorization = request.get('authorization')
+  if (authorization && authorization.toLowerCase().startsWith('bearer ')) {
+    return authorization.substring(7)
+  }
+  return null
+}
+
+const getUserHelper = async (request) => {
+  if (process.env.NODE_ENV === 'test') {
+    return {
+      username: 'test',
+      name: 'test',
+      id: 'abcdef12345678',
+      blogs: [
+        {
+          title: 'test',
+          author: 'test',
+          url: 'test',
+          likes: 0
+        }
+      ]
+    }
+  }
+  const token = getTokenFrom(request)
+  if (!token) {
+    return response.status(401).json({ error: 'token missing' })
+  }
+  const decodedToken = jwt.verify(token, process.env.SECRET)
+  if (!decodedToken.id) {
+    return response.status(401).json({ error: 'token invalid' })
+  }
+  return await User.findById(decodedToken.id)
+}
+
 module.exports = {
   requestLogger,
   unknownEndpoint,
-  errorHandler
+  errorHandler,
+  getUserHelper
 }

@@ -17,7 +17,7 @@ usersRouter.get('/:id', async (request, response) => {
 })
 
 usersRouter.post('/', async (request, response) => {
-  const { username, name, password } = request.body
+  const { username, name = "", password, blogs = [] } = request.body
 
   if (!password || password.length < 3) {
     return response.status(400).json({
@@ -30,13 +30,22 @@ usersRouter.post('/', async (request, response) => {
     })
   }
 
+  const allUsers = await User.find({})
+  const usernames = allUsers.map(user => user.username)
+  if (usernames.includes(username)) {
+    return response.status(400).json({
+      error: 'username must be unique'
+    })
+  }
+
   const saltRounds = 10
   const passwordHash = await bcrypt.hash(password, saltRounds)
 
   const user = new User({
     username,
     name,
-    passwordHash
+    passwordHash,
+    blogs
   })
 
   const savedUser = await user.save()
